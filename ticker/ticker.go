@@ -29,6 +29,7 @@ type Ticker struct {
 	url                 url.URL
 	callbacks           callbacks
 	lastPingTime        time.Time
+	lock                sync.RWMutex
 	autoReconnect       bool
 	reconnectMaxRetries int
 	reconnectMaxDelay   time.Duration
@@ -311,7 +312,9 @@ func (t *Ticker) ServeWithContext(ctx context.Context) {
 			t.reconnectAttempt = 0
 
 			// Set current time as last ping time
+			t.lock.Lock()
 			t.lastPingTime = time.Now()
+			t.lock.Unlock()
 
 			// Set on close handler
 			t.Conn.SetCloseHandler(t.handleClose)
@@ -401,6 +404,7 @@ func (t *Ticker) checkConnection(ctx context.Context, wg *sync.WaitGroup) {
 
 			// If last ping time is greater then timeout interval then close the
 			// existing connection and reconnect
+			t.lock.RLock()
 			if time.Since(t.lastPingTime) > dataTimeoutInterval {
 				// Close the current connection without waiting for close frame
 				if t.Conn != nil {
@@ -412,6 +416,7 @@ func (t *Ticker) checkConnection(ctx context.Context, wg *sync.WaitGroup) {
 				// Mark it as done in wait group
 				return
 			}
+			t.lock.RUnlock()
 		}
 	}
 }
@@ -431,7 +436,9 @@ func (t *Ticker) readMessage(ctx context.Context, wg *sync.WaitGroup) {
 			}
 
 			// Update last ping time to check for connection
+			t.lock.Lock()
 			t.lastPingTime = time.Now()
+			t.lock.Unlock()
 
 			// Trigger message.
 			t.triggerMessage(mType, msg)
@@ -757,4 +764,3 @@ func convertPrice(seg uint32, val float64) float64 {
 		return val / 100.0
 	}
 }
-

@@ -9,3 +9,5 @@ require (
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/jarcoal/httpmock.v1 v1.0.0-20180719183105-8007e27cdb32
 )
+
+replace github.com/zerodha/gokiteconnect/v4 => github.com/utekaravinash/gokiteconnect/v4 v4.0.7-0.20220422035414-4222e0d777fa
